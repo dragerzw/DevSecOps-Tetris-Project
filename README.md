@@ -1,106 +1,65 @@
-# 🚀 Enterprise-Grade DevSecOps & GitOps EKS Project
+# EKS DevSecOps & GitOps Pipeline
 
-![DevSecOps](https://img.shields.io/badge/DevSecOps-Mastery-brightgreen)
-![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-Automation-blue)
-![SonarCloud](https://img.shields.io/badge/SonarCloud-Code%20Quality-orange)
-![Terraform](https://img.shields.io/badge/Terraform-Infrastructure%20as%20Code-9cf)
-![ArgoCD](https://img.shields.io/badge/ArgoCD-GitOps%20CD-blue)
-![Trivy & OWASP](https://img.shields.io/badge/Security-Trivy%20%7C%20OWASP-red)
-![AWS EKS](https://img.shields.io/badge/AWS-Elastic%20Kubernetes%20Service-FF9900)
+This project demonstrates the implementation of a secure, automated pipeline for deploying a containerized application to an AWS Elastic Kubernetes Service (EKS) cluster using GitOps principles.
 
-Welcome to a professional-grade, end-to-end DevSecOps automation project! This repository demonstrates a high-availability, secure deployment of a containerized Tetris application onto a dynamically-provisioned AWS EKS cluster, managed strictly through GitOps orchestration.
+## Core Objectives
 
-## 🏗️ Architecture & Lifecycle
+The following technical milestones were achieved in this project:
+- ↳ **Build a full DevSecOps pipeline** around a containerized application.
+- ↳ **Integrate CI/CD**, container scanning, and Kubernetes deployment.
+- ↳ **Apply security checks** within the pipeline stages.
+- ↳ **Deploy and manage workloads** in a Kubernetes cluster using GitOps.
 
-This project implements a **True DevSecOps Lifecycle**, ensuring security and performance at every stage of the pipeline:
+## Technology Stack
 
-1.  **Infrastructure Orchestration (Terraform)**: Automated provisioning of a custom AWS VPC network and EKS Control Plane.
-2.  **Continuous Security & CI (GitHub Actions)**: Every commit undergoes static analysis, dependency scanning, and multi-layer container security checks.
-3.  **GitOps Continuous Delivery (ArgoCD)**: An in-cluster GitOps controller reconciles the desired state from GitHub directly to the live environment.
+| Category | Tool |
+| :--- | :--- |
+| **Cloud Provider** | AWS (EKS, VPC, S3) |
+| **Infrastructure as Code** | Terraform |
+| **CI/CD Platform** | GitHub Actions |
+| **Static Analysis (SAST)** | SonarCloud |
+| **SCA Security** | OWASP Dependency-Check |
+| **Container Security** | Trivy |
+| **Containerization** | Docker |
+| **GitOps Controller** | ArgoCD |
 
----
+## Pipeline Architecture
 
-## 🛠️ Technical Skills & Tooling Matrix
+The workflow is divided into two primary automation streams:
 
-| Category | Tool | Implementation |
-| :--- | :--- | :--- |
-| **Cloud Infrastructure** | **AWS (EKS, VPC, IAM, S3)** | Managed Kubernetes, networking, and state persistence |
-| **IaC / Automation** | **Terraform** | HashiCorp HCL for infrastructure-as-code |
-| **CI / CD Orchestration** | **GitHub Actions** | Automated, secure multi-stage deployment pipelines |
-| **Code Quality (SAST)** | **SonarCloud** | Automated static code analysis & quality gates |
-| **SCA Security** | **OWASP Dependency-Check** | Tracking vulnerable dependencies in open-source libraries |
-| **Container Security** | **Trivy** | Scanning for OS-level and application vulnerabilities |
-| **Containerization** | **Docker** | Multi-stage builds and image registry management |
-| **GitOps Delivery** | **ArgoCD** | Automated, declarative cluster state synchronization |
-| **Monitoring / Ops** | **AWS CloudWatch & Logs** | Essential for cluster and application health |
+1. **Provisioning (IaC)**: Terraform scripts automate the creation of a dedicated VPC, Subnets, and the EKS Cluster. This ensures environment consistency and reproducibility.
+2. **Application Lifecycle**: GitHub Actions manage the build, security scanning, and registry push. ArgoCD then synchronizes the cluster state with the repository manifests.
 
----
-
-## 🚀 Getting Started: Deployment Guide
+## Deployment Guide
 
 ### 1. Prerequisites
-*   An active **AWS Account** with IAM Administrator access.
-*   **Docker Hub** account for image hosting.
-*   **SonarCloud** organization for automated quality analysis.
-*   **AWS CLI** & **kubectl** installed on your local machine.
+- An AWS account with appropriate IAM permissions.
+- Docker Hub and SonarCloud accounts for image storage and code analysis.
+- AWS CLI and kubectl installed locally.
 
-### 2. Configure GitHub Secrets
-Add the following secrets to your GitHub repository (**Settings > Secrets and variables > Actions**):
+### 2. Required GitHub Secrets
+Configure the following secrets in your repository settings:
+- `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY`
+- `SONAR_TOKEN`
+- `DOCKER_USERNAME` & `DOCKER_PASSWORD`
+- `GH_PAT_TOKEN` (Scope: `repo` and `workflow`)
 
-| Secret Name | Purpose |
-| :--- | :--- |
-| `AWS_ACCESS_KEY_ID` | Programmatic IAM credentials for Terraform |
-| `AWS_SECRET_ACCESS_KEY` | Secret access key for AWS authentication |
-| `SONAR_TOKEN` | Authentication for SonarCloud analysis |
-| `DOCKER_USERNAME` | Docker Hub username for `docker push` |
-| `DOCKER_PASSWORD` | Docker Hub access token |
-| `GH_PAT_TOKEN` | GitHub Personal Access Token (with `repo` & `workflow` scopes) |
+### 3. Execution
+- **Infrastructure**: Trigger the `terraform.yml` workflow or push to the `EKS-TF/` directory.
+- **Application**: Push changes to the application source. The `cicd.yml` workflow will handle the build and security validation.
+- **GitOps**: Bootstrap ArgoCD in the cluster and apply the application manifest:
+  ```bash
+  aws eks update-kubeconfig --region us-east-1 --name Tetris-EKS-Cluster
+  kubectl create namespace argocd
+  kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+  kubectl apply -f Manifest-file/argocd-tetris-app.yaml
+  ```
 
-### 3. Execution Pipeline
+## Infrastructure Management & Cleanup
 
-#### Phase 1: Infrastructure Provisioning
-Simply push any change to the `EKS-TF/` folder or run the **Terraform EKS Deployment** workflow manually.
-*   **Outcome**: Dynamically scaffolds a VPC, Internet Gateway, Subnets, and an EKS Cluster.
+To decommission the resources and avoid ongoing costs:
+1. Remove the ArgoCD application: `kubectl delete -f Manifest-file/argocd-tetris-app.yaml`
+2. Destroy infrastructure: `terraform destroy` within the `EKS-TF/` directory.
 
-#### Phase 2: Application DevSecOps
-Push any update to the application source code.
-*   **Outcome**: Triggers security scans, builds the Docker image, pushes to the registry, and updates the Kubernetes manifests automatically.
-
-#### Phase 3: GitOps Bootstrapping
-Install the ArgoCD controller and apply the application link:
-```bash
-# Connect to cluster
-aws eks update-kubeconfig --region us-east-1 --name Tetris-EKS-Cluster
-
-# Bootstrap ArgoCD
-kubectl create namespace argocd
-kubectl apply --server-side --force-conflicts -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-
-# Create declarative GitOps application link
-kubectl apply -f Manifest-file/argocd-tetris-app.yaml
-```
-
----
-
-## 🧠 Challenges & Engineering Insights
-
-Overcoming these high-level technical hurdles demonstrated advanced DevSecOps engineering expertise:
-
-*   **Idempotent Infrastructure Architecture**: Refactored the Terraform module to migrate from static `data` source lookups to fully dynamic `resource` generation. This resolved "circular dependencies" and ensured a zero-touch, standalone VPC/EKS spin-up from a clean AWS account.
-*   **Fine-Grained IAM & GitHub Security Convergence**: Architected a secure cross-platform authentication flow. Resolved 403 API permission escalations by implementing precisely-scoped GitHub Personal Access Tokens (PATs) that allow the CI runner to safely update repository manifests while maintaining the **Principle of Least Privilege**.
-*   **Scaling Kubernetes Control Planes**: Addressed Kubernetes API manifest size limitations during the bootstrapping of complex GitOps controllers. Leveraged **Server-Side Apply** strategies and conflict-resolution flags to safely install large Custom Resource Definitions (CRDs) for ArgoCD.
-*   **CI Pipeline Resilience & Debugging**: Identified and remediated broken third-party action dependencies (OWASP Dependency-Check SHA-pinning failures). Modularized the pipeline to handle stale upstream references without compromising security thresholds.
-
----
-
-## 💰 Cleanup & Cost Management
-To avoid unexpected AWS charges, always decommission your resources when finished:
-
-1.  **Delete the GitOps application**: `kubectl delete -f Manifest-file/argocd-tetris-app.yaml`
-2.  **Destroy Infrastructure**: Navigate to `EKS-TF/` and run `terraform destroy -var-file=variables.tfvars`
-3.  **Delete S3 Backend (Manual)**: Remove the `dragops-tf-bucket` in S3 to clean up state persistence.
-
----
-
-## 📄 License
-This portfolio project is licensed under the Apache-2.0 license.
+## License
+This project is licensed under the Apache-2.0 license.
