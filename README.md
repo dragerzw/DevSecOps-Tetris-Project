@@ -2,33 +2,8 @@
 
 This project demonstrates the implementation of a secure, automated pipeline for deploying a containerized application to an AWS Elastic Kubernetes Service (EKS) cluster using GitOps principles.
 
-```mermaid
-graph TD
-    subgraph "Local Environment"
-        Dev[Developer] --> Git[Git Push to GitHub]
-    end
+<img width="2816" height="1536" alt="Gemini_Generated_Image_pzuw07pzuw07pzuw (1)" src="https://github.com/user-attachments/assets/3be06da7-d92f-411b-b047-2fd225780996" />
 
-    subgraph "GitHub Actions CI/CD"
-        Git --> Actions{GitHub Actions}
-        Actions --> Terraform[Terraform: Provision VPC & EKS]
-        Actions --> Security[Security Scan: SonarCloud & OWASP]
-        Actions --> Docker[Docker Build & Trivy Scan]
-        Docker --> Registry[Push to Docker Hub]
-    end
-
-    subgraph "AWS Infrastructure"
-        Terraform --> VPC[AWS VPC Network]
-        VPC --> EKS[AWS EKS Cluster]
-    end
-
-    subgraph "GitOps Continuous Delivery"
-        Registry --> ArgoCD[ArgoCD Controller]
-        Git -- Manifest Updates --> ArgoCD
-        ArgoCD --> EKS
-        EKS --> Pods[Tetris App Pods]
-        Pods --> SVC[AWS Load Balancer Service]
-    end
-```
 
 ## Core Objectives
 
