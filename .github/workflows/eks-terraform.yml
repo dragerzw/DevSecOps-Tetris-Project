@@ -1,0 +1,77 @@
+name: AWS EKS Terraform Pipeline
+
+# Equivalent to the Jenkins properties([parameters(...)]) block
+on:
+  workflow_dispatch:
+    inputs:
+      file_name:
+        description: 'Specify the variable file name'
+        required: true
+        default: 'variables.tfvars'
+        type: string
+      terraform_action:
+        description: 'Select Terraform action'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+env:
+  AWS_REGION: "us-east-1"
+  TF_WORKING_DIR: "./EKS-TF"
+
+jobs:
+  terraform-execution:
+    runs-on: ubuntu-latest
+
+    # Map the working directory to the entire job
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+    steps:
+      # Stage 1: Checkout from Git
+      - name: Checkout Code
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      # Authenticate to AWS (Equivalent to withAWS wrapper)
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Install specific Terraform version (Best practice for GitHub Actions)
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@651471c36a6092792c552e8b1bef71e592b462d8 # v3.1.1
+        with:
+          terraform_wrapper: false
+
+      # Stage 2: Initializing Terraform
+      - name: Terraform Init
+        run: terraform init
+
+      # Stage 3: Validate Terraform Code
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Stage 4: Terraform Plan (Always runs as a preview)
+      - name: Terraform Plan Preview
+        run: terraform plan -var-file=${{ inputs.file_name }}
+
+      # Stage 5: Terraform Action (Conditional Execution based on choice)
+      - name: Terraform Plan (Action)
+        if: ${{ inputs.terraform_action == 'plan' }}
+        run: terraform plan -var-file=${{ inputs.file_name }}
+
+      - name: Terraform Apply
+        if: ${{ inputs.terraform_action == 'apply' }}
+        run: terraform apply -auto-approve -var-file=${{ inputs.file_name }}
+
+      - name: Terraform Destroy
+        if: ${{ inputs.terraform_action == 'destroy' }}
+        run: terraform destroy -auto-approve -var-file=${{ inputs.file_name }}
