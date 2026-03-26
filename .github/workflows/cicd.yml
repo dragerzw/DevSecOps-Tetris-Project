@@ -7,8 +7,8 @@ on:
 
 env:
   GIT_REPO_NAME: "End-to-End-Kubernetes-DevSecOps-Tetris-Project"
-  GIT_USER_NAME: "AmanPathak-DevOps"
-  IMAGE_NAME: "avian19/tetrisv1"
+  GIT_USER_NAME: "dragerzw"
+  IMAGE_NAME: "realdrager/tetrisv1"
 
 jobs:
   build-and-deploy:
@@ -26,7 +26,7 @@ jobs:
           node-version: '18'
 
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v7.0.0
+        uses: SonarSource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
@@ -37,7 +37,7 @@ jobs:
             -Dsonar.projectKey=Tetris
 
       - name: SonarQube Quality Gate Check
-        uses: SonarSource/sonarqube-quality-gate-action@d304d0505202a33a8767e7d6ed162d083cd65609 # v1.1.0
+        uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -85,8 +85,8 @@ jobs:
       - name: Update Kubernetes Deployment Manifest
         working-directory: ./Manifest-file
         run: |
-          git config user.email "aman07pathak@gmail.com"
-          git config user.name "AmanPathak-DevOps"
+          git config user.email "dragerzw@users.noreply.github.com"
+          git config user.name "dragerzw"
           
           echo "Build Number: ${{ github.run_number }}"
           imageTag=$(grep -oP '(?<=tetrisv1:)[^ ]+' deployment-service.yml)
